@@ -22,7 +22,7 @@ public class OpenAPIConfig {
     public GroupedOpenApi apiAuth() {
         return GroupedOpenApi.builder()
                 .group("Users-Auth API")
-                .pathsToMatch("auth/**")
+                .pathsToMatch("/auth/**")
                 .build();
     }
 

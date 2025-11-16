@@ -1,6 +1,7 @@
 package com.example.userManager.user;
 
 import com.example.userManager.dto.request.UserRequestDto;
+import com.example.userManager.dto.request.auth.LoginRequestDto;
 import com.example.userManager.dto.request.auth.SignupRequestDto;
 import com.example.userManager.dto.response.UserResponseDto;
 
@@ -17,4 +18,6 @@ public interface UserService {
     UserResponseDto update(UUID id, UserRequestDto request);
 
     void delete(UUID id);
+
+    String login(LoginRequestDto loginRequestDto) throws Exception;
 }
