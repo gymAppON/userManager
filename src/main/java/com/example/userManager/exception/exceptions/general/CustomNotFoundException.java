@@ -3,6 +3,8 @@ package com.example.userManager.exception.exceptions.general;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
+import java.util.UUID;
+
 @ResponseStatus(value = HttpStatus.NOT_FOUND)
 public class CustomNotFoundException extends RuntimeException {
 
@@ -14,7 +16,7 @@ public class CustomNotFoundException extends RuntimeException {
         super(NOT_FOUND_EXCEPTION_TEXT.formatted(objectName));
     }
 
-    public CustomNotFoundException(String objectName, String id) {
+    public <T> CustomNotFoundException(String objectName, T id) {
         super(WITH_ID_NOT_FOUND_EXCEPTION_TEXT.formatted(objectName, id));
     }
 

@@ -6,11 +6,9 @@ import com.example.userManager.dto.request.auth.SignupRequestDto;
 import com.example.userManager.dto.response.UserResponseDto;
 import com.example.userManager.exception.LogEnum;
 import com.example.userManager.exception.exceptions.general.CustomAlreadyExistException;
+import com.example.userManager.exception.exceptions.general.CustomNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-//import org.springframework.security.core.userdetails.UserDetails;
-//import org.springframework.security.core.userdetails.UserDetailsService;
-//import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -63,31 +61,129 @@ public class UserServiceImpl implements UserDetailsService, UserService {
 
     @Override
     public UserResponseDto getById(UUID id) {
-        return null;
+        UserEntity userEntity = findById(id);
+
+        log.info("{}: {} (Id: {}) was found", LogEnum.SERVICE, OBJECT_NAME, id);
+        return userMapper.toResponse(userEntity);
     }
 
     @Override
     public List<UserResponseDto> getAll() {
-        return List.of();
+        List<UserResponseDto> users = userMapper.toResponseDtoList(userRepository.findAll());
+
+        log.info("{}: all {} were obtained", LogEnum.SERVICE, OBJECT_NAME);
+        return users;
     }
 
     @Override
     public UserResponseDto update(UUID id, UserRequestDto request) {
-        return null;
+        UserEntity userEntity = findById(id);
+        String passwordRequest = request.password();
+        String passwordInDb = userEntity.getPassword();
+
+        validateUserUpdation(userEntity, request);
+        userEntity = userMapper.toEntity(request);
+        if (!passwordEncoder.matches(passwordRequest, passwordInDb)){
+            userEntity.setPassword(passwordEncoder.encode(passwordRequest));
+//            userEntity.setPasswordVerified(false);
+//            userEntity.setPasswordVerificationCode(UUID.randomUUID().toString().substring(0, 6));
+        }
+
+        //updatedUser.setPassword(passwordEncoder.encode(userEntity.getPassword()));
+        UserEntity updatedUserEntity = userRepository.save(userEntity);
+
+        log.info("{}: {} (Id: {}) was updated", LogEnum.SERVICE, OBJECT_NAME, id);
+        return userMapper.toResponse(updatedUserEntity);
     }
 
     @Override
     public void delete(UUID id) {
+        userRepository.deleteById(id);
 
+        log.info("{}: {} (Id: {}) was deleted", LogEnum.SERVICE, OBJECT_NAME, id);
     }
 
     @Override
     public String login(LoginRequestDto loginRequestDto) throws Exception {
-        return "";
+        String email = loginRequestDto.email();
+        UserEntity user = findByContactInfo(email);
+
+//        if (!user.isEmailVerified()) {
+//            throw new UnverifiedAccountException(email);
+//        } else if (!user.isPasswordVerified()) {
+//            throw new UnconfirmedPasswordChangeException(email);
+//        }
+
+//        Authentication authentication;
+//        try {
+//            authentication = authenticationManager.authenticate(
+//                    new UsernamePasswordAuthenticationToken(loginRequestDto.email(), loginRequestDto.password())
+//            );
+//        } catch (AuthenticationException e) {
+//            throw new Exception("Authentication Exception", e);
+//        }
+//
+//        SecurityContextHolder.getContext().setAuthentication(authentication);
+        //return jwtService.generateToken(user.getId(), user.getEmail(), user.getFirstName()+" "+user.getLastName());
+        return "JWT Token in Future";
     }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         return null;
+    }
+
+
+    //FIND BY
+    public UserEntity findById(UUID id) {
+        return userRepository.findById(id).orElseThrow(() -> new CustomNotFoundException(OBJECT_NAME, id));
+    }
+
+    public UserEntity findByEmail (String email) {
+        log.info("{}: request on retrieving " + OBJECT_NAME + " by email {} was sent", LogEnum.SERVICE, email);
+        return userRepository.findByEmail(email).orElseThrow(() -> new CustomNotFoundException(OBJECT_NAME, email));
+    }
+
+    public UserEntity findByGoogleAuthId (String googleId) {
+        log.info("{}: request on retrieving " + OBJECT_NAME + " by googleId {} was sent", LogEnum.SERVICE, googleId);
+        return userRepository.findByGoogleId(googleId).orElseThrow(() -> new CustomNotFoundException(OBJECT_NAME, googleId));
+    }
+
+    public UserEntity findByTelegramId (String telegramId) {
+        log.info("{}: request on retrieving " + OBJECT_NAME + " by telegramId {} was sent", LogEnum.SERVICE, telegramId);
+        return userRepository.findByTelegramId(telegramId).orElseThrow(() -> new CustomNotFoundException(OBJECT_NAME, telegramId));
+    }
+
+    private UserEntity findByContactInfo(String contact){
+        log.info("{}: searching for user by any contact info: {}", LogEnum.SERVICE, contact);
+
+        return userRepository.findByEmail(contact)
+                .or(() -> userRepository.findByGoogleId(contact))
+                .or(() -> userRepository.findByTelegramId(contact))
+                .orElseThrow(()->new CustomNotFoundException(OBJECT_NAME, contact));
+    }
+
+    private void validateUserUpdation(UserEntity userEntity, UserRequestDto request) {
+        String email = request.email();
+        String googleAuthId = request.googleAuthId();
+        String telegramId = request.telegramId();
+
+        if (!email.equals(userEntity.getEmail())) {
+            if (userRepository.existsByEmail(email)){
+                throw new CustomAlreadyExistException(OBJECT_NAME, "Email", email);
+            }
+//            userEntity.setEmailVerified(false);
+//            userEntity.setEmailVerificationCode(UUID.randomUUID().toString().substring(0, 6));
+        }
+        if (!googleAuthId.equals(userEntity.getGoogleAuthId())) {
+            if (userRepository.existsByGoogleAuthId(googleAuthId)){
+                throw new CustomAlreadyExistException(OBJECT_NAME, "Google Auth Id", googleAuthId);
+            }
+        }
+        if (!telegramId.equals(userEntity.getTelegramId())) {
+            if (userRepository.existsByTelegramId(telegramId)){
+                throw new CustomAlreadyExistException(OBJECT_NAME, "Telegram Id", telegramId);
+            }
+        }
     }
 }
