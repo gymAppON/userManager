@@ -20,4 +20,6 @@ public interface UserService {
     void delete(UUID id);
 
     String login(LoginRequestDto loginRequestDto) throws Exception;
+
+    UserResponseDto processOAuthPostLogin(String email, String name);
 }
