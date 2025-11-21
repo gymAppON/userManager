@@ -100,5 +100,4 @@ public class UserController {
         userService.delete(id);
         log.info("{}: Deleted {} with id: {}",LogEnum.CONTROLLER,OBJECT_NAME, id);
     }
-
 }

@@ -15,7 +15,6 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @RequiredArgsConstructor
@@ -23,6 +22,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final UserService userService;
+    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 //    private final AuthEntryPointJwt unauthorizedHandler;
 //    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 //
@@ -36,6 +36,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth ->
                         auth
                                 .requestMatchers(
+                                        "/login/**", "/oauth2/**",
                                         "/*",
                                         "/auth/**",
                                         "/swagger-ui/**",
@@ -48,7 +49,12 @@ public class SecurityConfig {
 //                                .anyRequest()
 //                                .permitAll()
                                 //.anyRequest().authenticated()
-                );
+                )
+                .oauth2Login(oauth2 -> oauth2
+                                .successHandler(oAuth2LoginSuccessHandler)
+                        // (Опционально) Настройка ендпоинта логина
+                        // .loginPage("/login")
+                );;
         //http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

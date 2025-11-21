@@ -4,9 +4,12 @@ import com.example.userManager.dto.request.UserRequestDto;
 import com.example.userManager.dto.request.auth.LoginRequestDto;
 import com.example.userManager.dto.request.auth.SignupRequestDto;
 import com.example.userManager.dto.response.UserResponseDto;
+import com.example.userManager.enums.LanguageEnum;
+import com.example.userManager.enums.WeightUnitEnum;
 import com.example.userManager.exception.LogEnum;
 import com.example.userManager.exception.exceptions.general.CustomAlreadyExistException;
 import com.example.userManager.exception.exceptions.general.CustomNotFoundException;
+import com.example.userManager.exception.exceptions.user.UserIncorrectPasswordException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -106,8 +110,11 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     @Override
     public String login(LoginRequestDto loginRequestDto) throws Exception {
         String email = loginRequestDto.email();
-        UserEntity user = findByContactInfo(email);
 
+        UserEntity user = findByEmail(email);
+        if (!passwordEncoder.matches(loginRequestDto.password(), user.getPassword())){
+            throw new UserIncorrectPasswordException(user.getUsername());
+        }
 //        if (!user.isEmailVerified()) {
 //            throw new UnverifiedAccountException(email);
 //        } else if (!user.isPasswordVerified()) {
@@ -129,6 +136,27 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     }
 
     @Override
+    public UserResponseDto loginViaGoogle(String name, LoginRequestDto requestDto) {
+        String googleAuthId = requestDto.googleAuthId();
+        String email = requestDto.email();
+        Optional<UserEntity> userOptional = userRepository.findByGoogleAuthId(googleAuthId);
+
+        if (userOptional.isEmpty()) {
+            SignupRequestDto newUser = new SignupRequestDto(name, email, null, googleAuthId,
+                    googleAuthId, new UserMetadata(WeightUnitEnum.KG, LanguageEnum.EN, "+2"));
+           // newUser.setRole(Role.USER);
+            log.info("{}: {} (Email: {}) was created via Google", LogEnum.SERVICE, OBJECT_NAME, email);
+            return create(newUser);
+        } else {
+            UserEntity existingUser = userOptional.get();
+            existingUser.setUsername(name);
+
+            log.info("{}: {} (Email: {}) was logged in via Google", LogEnum.SERVICE, OBJECT_NAME, email);
+            return userMapper.toResponse(userRepository.save(existingUser));
+        }
+    }
+
+    @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         return null;
     }
@@ -146,7 +174,7 @@ public class UserServiceImpl implements UserDetailsService, UserService {
 
     public UserEntity findByGoogleAuthId (String googleId) {
         log.info("{}: request on retrieving " + OBJECT_NAME + " by googleId {} was sent", LogEnum.SERVICE, googleId);
-        return userRepository.findByGoogleId(googleId).orElseThrow(() -> new CustomNotFoundException(OBJECT_NAME, googleId));
+        return userRepository.findByGoogleAuthId(googleId).orElseThrow(() -> new CustomNotFoundException(OBJECT_NAME, googleId));
     }
 
     public UserEntity findByTelegramId (String telegramId) {
@@ -158,7 +186,7 @@ public class UserServiceImpl implements UserDetailsService, UserService {
         log.info("{}: searching for user by any contact info: {}", LogEnum.SERVICE, contact);
 
         return userRepository.findByEmail(contact)
-                .or(() -> userRepository.findByGoogleId(contact))
+                .or(() -> userRepository.findByGoogleAuthId(contact))
                 .or(() -> userRepository.findByTelegramId(contact))
                 .orElseThrow(()->new CustomNotFoundException(OBJECT_NAME, contact));
     }
