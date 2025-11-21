@@ -31,7 +31,7 @@ public class UserEntity {
     @Column(unique = true)
     private String email;
 
-    @Column(nullable = false)
+    @Column
     private String password;
 
     @Type(JsonType.class)

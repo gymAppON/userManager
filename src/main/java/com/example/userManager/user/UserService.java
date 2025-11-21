@@ -21,5 +21,5 @@ public interface UserService {
 
     String login(LoginRequestDto loginRequestDto) throws Exception;
 
-    UserResponseDto processOAuthPostLogin(String email, String name);
+    UserResponseDto loginViaGoogle(String name, LoginRequestDto loginRequestDto);
 }
