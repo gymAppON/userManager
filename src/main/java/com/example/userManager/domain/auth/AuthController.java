@@ -1,6 +1,5 @@
 package com.example.userManager.domain.auth;
 
-import com.example.userManager.domain.user.UserService;
 import com.example.userManager.domain.auth.dto.LoginRequestDto;
 import com.example.userManager.domain.auth.dto.SignupRequestDto;
 import com.example.userManager.domain.user.dto.UserResponseDto;
@@ -30,7 +29,7 @@ public class AuthController {
 //    private static final String VERIF_URI = "/verification";
 //    private static final String VERIF_URI_CODE = "/{verifCode}";
 
-    private final UserService userService;
+    private final AuthService authService;
 
     @PostMapping("/login")
     @Operation(summary = "Login user")
@@ -41,7 +40,7 @@ public class AuthController {
                     content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = RuntimeException.class))})
     })
     public JwtResponseDto authenticateUser(@Valid @RequestBody LoginRequestDto loginRequestDto) throws Exception {
-        String jwtToken = userService.login(loginRequestDto);
+        String jwtToken = authService.login(loginRequestDto);
         //String email = SecurityContextHolder.getContext().getAuthentication().getName();
         log.info("{}: User (email: {}) has accomplished authentication process", LogEnum.CONTROLLER, loginRequestDto.email());
         return new JwtResponseDto(jwtToken);
@@ -57,7 +56,7 @@ public class AuthController {
                     content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = RuntimeException.class))})
     })
     public UserResponseDto registerUser(@Valid @RequestBody SignupRequestDto signUpRequestDto) throws CustomAlreadyExistException {
-        UserResponseDto userDto = userService.create(signUpRequestDto);
+        UserResponseDto userDto = authService.register(signUpRequestDto);
         log.info("{}: User (id: {}) has accomplished registration process", LogEnum.CONTROLLER, userDto.id());
         return userDto;
     }

@@ -19,7 +19,7 @@ public interface UserService {
 
     void delete(UUID id);
 
-    String login(LoginRequestDto loginRequestDto) throws Exception;
+    UserEntity findByEmail(String email);
 
-    UserResponseDto loginViaGoogle(String name, LoginRequestDto loginRequestDto);
+    UserEntity findByContactInfo(String contact);
 }

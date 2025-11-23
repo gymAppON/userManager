@@ -1,15 +1,11 @@
 package com.example.userManager.domain.user;
 
 import com.example.userManager.domain.user.dto.UserRequestDto;
-import com.example.userManager.domain.auth.dto.LoginRequestDto;
 import com.example.userManager.domain.auth.dto.SignupRequestDto;
 import com.example.userManager.domain.user.dto.UserResponseDto;
-import com.example.userManager.shared.enums.LanguageEnum;
-import com.example.userManager.shared.enums.WeightUnitEnum;
 import com.example.userManager.shared.exception.LogEnum;
 import com.example.userManager.shared.exception.exceptions.general.CustomAlreadyExistException;
 import com.example.userManager.shared.exception.exceptions.general.CustomNotFoundException;
-import com.example.userManager.shared.exception.exceptions.user.UserIncorrectPasswordException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +17,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -105,55 +100,6 @@ public class UserServiceImpl implements UserDetailsService, UserService {
         log.info("{}: {} (Id: {}) was deleted", LogEnum.SERVICE, OBJECT_NAME, id);
     }
 
-    @Override
-    public String login(LoginRequestDto loginRequestDto) throws Exception {
-        String email = loginRequestDto.email();
-
-        UserEntity user = findByEmail(email);
-        if (!passwordEncoder.matches(loginRequestDto.password(), user.getPassword())){
-            throw new UserIncorrectPasswordException(user.getUsername());
-        }
-//        if (!user.isEmailVerified()) {
-//            throw new UnverifiedAccountException(email);
-//        } else if (!user.isPasswordVerified()) {
-//            throw new UnconfirmedPasswordChangeException(email);
-//        }
-
-//        Authentication authentication;
-//        try {
-//            authentication = authenticationManager.authenticate(
-//                    new UsernamePasswordAuthenticationToken(loginRequestDto.email(), loginRequestDto.password())
-//            );
-//        } catch (AuthenticationException e) {
-//            throw new Exception("Authentication Exception", e);
-//        }
-//
-//        SecurityContextHolder.getContext().setAuthentication(authentication);
-        //return jwtService.generateToken(user.getId(), user.getEmail(), user.getFirstName()+" "+user.getLastName());
-        return "JWT Token in Future";
-    }
-
-    @Override
-    public UserResponseDto loginViaGoogle(String name, LoginRequestDto requestDto) {
-        String googleAuthId = requestDto.googleAuthId();
-        String email = requestDto.email();
-        Optional<UserEntity> userOptional = userRepository.findByGoogleAuthId(googleAuthId);
-
-        if (userOptional.isEmpty()) {
-            SignupRequestDto newUser = new SignupRequestDto(name, email, null, googleAuthId,
-                    googleAuthId, new UserMetadata(WeightUnitEnum.KG, LanguageEnum.EN, "+2"));
-           // newUser.setRole(Role.USER);
-            log.info("{}: {} (Email: {}) was created via Google", LogEnum.SERVICE, OBJECT_NAME, email);
-            return create(newUser);
-        } else {
-            UserEntity existingUser = userOptional.get();
-            existingUser.setUsername(name);
-
-            log.info("{}: {} (Email: {}) was logged in via Google", LogEnum.SERVICE, OBJECT_NAME, email);
-            return userMapper.toResponse(userRepository.save(existingUser));
-        }
-    }
-
     //We need to invent the field, which will have such characteristics:
     //1) Will be unique
     //2) Every user will have it filled
@@ -169,6 +115,7 @@ public class UserServiceImpl implements UserDetailsService, UserService {
         return userRepository.findById(id).orElseThrow(() -> new CustomNotFoundException(OBJECT_NAME, id));
     }
 
+    @Override
     public UserEntity findByEmail (String email) {
         log.info("{}: request on retrieving " + OBJECT_NAME + " by email {} was sent", LogEnum.SERVICE, email);
         return userRepository.findByEmail(email).orElseThrow(() -> new CustomNotFoundException(OBJECT_NAME, email));
@@ -184,7 +131,8 @@ public class UserServiceImpl implements UserDetailsService, UserService {
         return userRepository.findByTelegramId(telegramId).orElseThrow(() -> new CustomNotFoundException(OBJECT_NAME, telegramId));
     }
 
-    private UserEntity findByContactInfo(String contact){
+    @Override
+    public UserEntity findByContactInfo(String contact){
         log.info("{}: searching for user by any contact info: {}", LogEnum.SERVICE, contact);
 
         return userRepository.findByEmail(contact)

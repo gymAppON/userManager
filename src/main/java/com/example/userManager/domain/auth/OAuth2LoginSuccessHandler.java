@@ -2,7 +2,6 @@ package com.example.userManager.domain.auth;
 
 import com.example.userManager.domain.auth.dto.LoginRequestDto;
 import com.example.userManager.domain.user.dto.UserResponseDto;
-import com.example.userManager.domain.user.UserService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -20,7 +19,7 @@ import java.io.IOException;
 @Slf4j
 public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
-    private final UserService userService;
+    private final AuthService authService;
 
     //Takes data if request was successful
     //e.g. right url request, google correct work etc.
@@ -36,7 +35,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
         log.info("OAuth2 login success for email: {}", email);
 
-        UserResponseDto user = userService.loginViaGoogle(name, new LoginRequestDto(email, null, googleAuthId, googleAuthId));
+        UserResponseDto user = authService.loginViaGoogle(name, new LoginRequestDto(email, null, googleAuthId, googleAuthId));
 
         //For now, it response basic statistics report and login-ed user
         response.setContentType("application/json");
