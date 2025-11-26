@@ -6,6 +6,7 @@ import com.example.userManager.domain.user.dto.UserResponseDto;
 import com.example.userManager.shared.exception.LogEnum;
 import com.example.userManager.shared.exception.exceptions.general.CustomAlreadyExistException;
 import com.example.userManager.infrastructure.security.jwt.JwtResponseDto;
+import com.example.userManager.shared.exception.exceptions.general.CustomErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -26,8 +27,8 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 public class AuthController {
 
-//    private static final String VERIF_URI = "/verification";
-//    private static final String VERIF_URI_CODE = "/{verifCode}";
+    private static final String VERIF_URI = "/verification";
+    private static final String VERIF_URI_CODE = "/{verifCode}";
 
     private final AuthService authService;
 
@@ -59,6 +60,30 @@ public class AuthController {
         UserResponseDto userDto = authService.register(signUpRequestDto);
         log.info("{}: User (id: {}) has accomplished registration process", LogEnum.CONTROLLER, userDto.id());
         return userDto;
+    }
+
+    @GetMapping(VERIF_URI+"/email"+VERIF_URI_CODE)
+    @Operation(summary = "User account verification")
+    @ApiResponses( value = {
+            @ApiResponse(responseCode = "200", description = "Email verification successful"),
+            @ApiResponse(responseCode = "404", description = "User with this email not found",
+                    content = { @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = CustomErrorResponse.class)) })
+    })
+    public void emailVerification(@PathVariable String verifCode) {
+        UserResponseDto userResponseDto = authService.emailVerification(verifCode);
+        log.info("{}: User (id: {}) has completed email verification", LogEnum.CONTROLLER, userResponseDto.id());
+    }
+
+    @GetMapping(VERIF_URI+"/password"+VERIF_URI_CODE)
+    @Operation(summary = "User account verification")
+    @ApiResponses( value = {
+            @ApiResponse(responseCode = "200", description = "Password verification successful"),
+            @ApiResponse(responseCode = "404", description = "User with this password verification code not found",
+                    content = { @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = CustomErrorResponse.class)) })
+    })
+    public void passwordVerification(@PathVariable String verifCode) {
+        UserResponseDto userResponseDto = authService.passwordVerification(verifCode);
+        log.info("{}: User (id: {}) has completed password verification", LogEnum.CONTROLLER, userResponseDto.id());
     }
 }
 

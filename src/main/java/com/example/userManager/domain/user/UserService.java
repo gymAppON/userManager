@@ -23,7 +23,7 @@ public interface UserService {
 
     UserEntity findByContactInfo(String contact);
 
-    UserEntity findByEmailVerificationCode(String verificationCode);
+    UserResponseDto confirmEmail(String emailVerificationCode);
 
-    UserEntity findByPasswordVerificationCode(String verificationCode);
+    UserResponseDto confirmPassword(String passwordVerificationCode);
 }

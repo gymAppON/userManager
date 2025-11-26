@@ -10,4 +10,8 @@ public interface AuthService {
     String login(LoginRequestDto loginRequestDto) throws Exception;
 
     UserResponseDto loginViaGoogle(String name, LoginRequestDto loginRequestDto);
+
+    UserResponseDto emailVerification(String emailVerificationCode);
+
+    UserResponseDto passwordVerification(String passwordVerificationCode);
 }

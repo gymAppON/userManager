@@ -92,4 +92,14 @@ public class AuthServiceIml implements AuthService{
             return userMapper.toResponse(userOptional);
         }
     }
+
+    @Override
+    public UserResponseDto emailVerification(String emailVerificationCode) {
+        return userService.confirmEmail(emailVerificationCode);
+    }
+
+    @Override
+    public UserResponseDto passwordVerification(String passwordVerificationCode) {
+        return userService.confirmPassword(passwordVerificationCode);
+    }
 }

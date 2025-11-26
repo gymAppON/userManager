@@ -164,13 +164,11 @@ public class UserServiceImpl implements UserDetailsService, UserService {
                 .orElseThrow(()->new CustomNotFoundException(OBJECT_NAME, contact));
     }
 
-    @Override
     public UserEntity findByEmailVerificationCode(String verificationCode) {
         log.info("{}: request on retrieving " + OBJECT_NAME + " by email verification code {} was sent", LogEnum.SERVICE, verificationCode);
         return userRepository.findByEmailVerificationCode(verificationCode).orElseThrow(() -> new CustomNotFoundException(OBJECT_NAME));
     }
 
-    @Override
     public UserEntity findByPasswordVerificationCode(String verificationCode) {
         log.info("{}: request on retrieving " + OBJECT_NAME + " by password verification code {} was sent", LogEnum.SERVICE, verificationCode);
         return userRepository.findByPasswordVerificationCode(verificationCode).orElseThrow(() -> new CustomNotFoundException(OBJECT_NAME));
