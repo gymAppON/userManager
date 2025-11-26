@@ -30,3 +30,15 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 #    show-sql: true
 #    properties.hibernate.format_sql: true
+  mail:
+    host: smtp.gmail.com
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    port: 587
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true

@@ -12,6 +12,9 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
     Optional<UserEntity> findByGoogleAuthId(String googleId);
     Optional<UserEntity> findByTelegramId(String facebookId);
 
+    Optional<UserEntity> findByEmailVerificationCode(String emailVerificationCode);
+    Optional<UserEntity> findByPasswordVerificationCode(String passwordVerificationCode);
+
     boolean existsByEmail(String email);
     boolean existsByGoogleAuthId(String googleAuthId);
     boolean existsByTelegramId(String telegramId);

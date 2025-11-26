@@ -30,6 +30,9 @@ dependencies {
     implementation ("org.springframework.boot:spring-boot-starter-validation")
     implementation ("org.springframework.boot:spring-boot-starter-security")
 
+    // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-mail
+    implementation("org.springframework.boot:spring-boot-starter-mail")
+
     // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-oauth2-client
     implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
 

@@ -3,12 +3,15 @@ package com.example.userManager.domain.user;
 import com.example.userManager.domain.user.dto.UserRequestDto;
 import com.example.userManager.domain.auth.dto.SignupRequestDto;
 import com.example.userManager.domain.user.dto.UserResponseDto;
+import com.example.userManager.infrastructure.config.mail.notifications.UserSecurityCodeUpdatedEvent;
+import com.example.userManager.shared.enums.VerificationType;
 import com.example.userManager.shared.exception.LogEnum;
 import com.example.userManager.shared.exception.exceptions.general.CustomAlreadyExistException;
 import com.example.userManager.shared.exception.exceptions.general.CustomNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -23,6 +26,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserDetailsService, UserService {
+    private final ApplicationEventPublisher eventPublisher;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     //private final EmailService emailService;
@@ -45,13 +49,14 @@ public class UserServiceImpl implements UserDetailsService, UserService {
         UserEntity user = userMapper.toEntity(request);
         //user.setRole(Role.USER);
         user.setPassword(passwordEncoder.encode(request.password()));
+        user.setPasswordVerified(true);
+
+        user.setEmailVerified(false);
+        user.setEmailVerificationCode(UUID.randomUUID().toString().substring(0, 6));
+        eventPublisher.publishEvent(new UserSecurityCodeUpdatedEvent(email, user.getEmailVerificationCode(), VerificationType.EMAIL_UPDATE));
+
         UserEntity savedUserEntity = userRepository.save(user);
 
-//        String helloMesSubject = "Welcome from Urban Zen!";
-//        String helloMesText = "Hello from Urban Zen marketplace, happy to see you on our marketplace!";
-
-//        emailService.sendLetter(email, helloMesSubject, helloMesText);
-//        emailService.sendVerificationEmailLetter(email, savedUserEntity.getEmailVerificationCode());
         log.info("{}: {} (Id: {}) was created", LogEnum.SERVICE, OBJECT_NAME, savedUserEntity.getId());
         return userMapper.toResponse(savedUserEntity);
     }
@@ -74,23 +79,41 @@ public class UserServiceImpl implements UserDetailsService, UserService {
 
     @Override
     public UserResponseDto update(UUID id, UserRequestDto request) {
-        UserEntity userEntity = findById(id);
+        UserEntity fromDb = findById(id);
+        String emailRequest = request.email();
         String passwordRequest = request.password();
-        String passwordInDb = userEntity.getPassword();
+        String googleAuthId = request.googleAuthId();
+        String telegramId = request.telegramId();
+        UserEntity fromRequest = userMapper.toEntity(request);
 
-        validateUserUpdation(userEntity, request);
-        userEntity = userMapper.toEntity(request);
-        if (!passwordEncoder.matches(passwordRequest, passwordInDb)){
-            userEntity.setPassword(passwordEncoder.encode(passwordRequest));
-//            userEntity.setPasswordVerified(false);
-//            userEntity.setPasswordVerificationCode(UUID.randomUUID().toString().substring(0, 6));
+        if (emailRequest!=null && !emailRequest.equals(fromDb.getEmail())) {
+            if (userRepository.existsByEmail(emailRequest)){
+                throw new CustomAlreadyExistException(OBJECT_NAME, "Email", emailRequest);
+            }
+            fromRequest.setEmailVerified(false);
+            fromRequest.setEmailVerificationCode(UUID.randomUUID().toString().substring(0, 6));
+            eventPublisher.publishEvent(new UserSecurityCodeUpdatedEvent(emailRequest, fromRequest.getEmailVerificationCode(), VerificationType.EMAIL_UPDATE));
+        }
+        if (!passwordEncoder.matches(passwordRequest, fromDb.getPassword())) {
+            fromRequest.setPassword(passwordEncoder.encode(passwordRequest));
+            fromRequest.setPasswordVerified(false);
+            fromRequest.setPasswordVerificationCode(UUID.randomUUID().toString().substring(0, 6));
+            eventPublisher.publishEvent(new UserSecurityCodeUpdatedEvent(emailRequest, fromRequest.getPasswordVerificationCode(), VerificationType.PASSWORD_UPDATE));
         }
 
-        //updatedUser.setPassword(passwordEncoder.encode(userEntity.getPassword()));
-        UserEntity updatedUserEntity = userRepository.save(userEntity);
+        if (googleAuthId!=null && !googleAuthId.equals(fromDb.getGoogleAuthId())) {
+            if (userRepository.existsByGoogleAuthId(googleAuthId)){
+                throw new CustomAlreadyExistException(OBJECT_NAME, "Google Auth Id", googleAuthId);
+            }
+        }
+        if (telegramId!=null && !telegramId.equals(fromDb.getTelegramId())) {
+            if (userRepository.existsByTelegramId(telegramId)){
+                throw new CustomAlreadyExistException(OBJECT_NAME, "Telegram Id", telegramId);
+            }
+        }
 
         log.info("{}: {} (Id: {}) was updated", LogEnum.SERVICE, OBJECT_NAME, id);
-        return userMapper.toResponse(updatedUserEntity);
+        return userMapper.toResponse(userRepository.save(fromRequest));
     }
 
     @Override
@@ -141,27 +164,34 @@ public class UserServiceImpl implements UserDetailsService, UserService {
                 .orElseThrow(()->new CustomNotFoundException(OBJECT_NAME, contact));
     }
 
-    private void validateUserUpdation(UserEntity userEntity, UserRequestDto request) {
-        String email = request.email();
-        String googleAuthId = request.googleAuthId();
-        String telegramId = request.telegramId();
+    @Override
+    public UserEntity findByEmailVerificationCode(String verificationCode) {
+        log.info("{}: request on retrieving " + OBJECT_NAME + " by email verification code {} was sent", LogEnum.SERVICE, verificationCode);
+        return userRepository.findByEmailVerificationCode(verificationCode).orElseThrow(() -> new CustomNotFoundException(OBJECT_NAME));
+    }
 
-        if (!email.equals(userEntity.getEmail())) {
-            if (userRepository.existsByEmail(email)){
-                throw new CustomAlreadyExistException(OBJECT_NAME, "Email", email);
-            }
-//            userEntity.setEmailVerified(false);
-//            userEntity.setEmailVerificationCode(UUID.randomUUID().toString().substring(0, 6));
-        }
-        if (!googleAuthId.equals(userEntity.getGoogleAuthId())) {
-            if (userRepository.existsByGoogleAuthId(googleAuthId)){
-                throw new CustomAlreadyExistException(OBJECT_NAME, "Google Auth Id", googleAuthId);
-            }
-        }
-        if (!telegramId.equals(userEntity.getTelegramId())) {
-            if (userRepository.existsByTelegramId(telegramId)){
-                throw new CustomAlreadyExistException(OBJECT_NAME, "Telegram Id", telegramId);
-            }
-        }
+    @Override
+    public UserEntity findByPasswordVerificationCode(String verificationCode) {
+        log.info("{}: request on retrieving " + OBJECT_NAME + " by password verification code {} was sent", LogEnum.SERVICE, verificationCode);
+        return userRepository.findByPasswordVerificationCode(verificationCode).orElseThrow(() -> new CustomNotFoundException(OBJECT_NAME));
+    }
+
+    //CONFIRMATION
+    public UserResponseDto confirmEmail(String emailVerificationCode) {
+        UserEntity user = findByEmailVerificationCode(emailVerificationCode);
+        user.setEmailVerified(true);
+        user.setEmailVerificationCode(null);
+        log.info("{}: " + OBJECT_NAME + "'s (id: {}) email has been confirmed", LogEnum.SERVICE, user.getId());
+        UserEntity savedUser = userRepository.save(user);
+        return userMapper.toResponse(savedUser);
+    }
+
+    public UserResponseDto confirmPassword(String passwordVerificationCode) {
+        UserEntity user = findByPasswordVerificationCode(passwordVerificationCode);
+        user.setPasswordVerified(true);
+        user.setPasswordVerificationCode(null);
+        log.info("{}: " + OBJECT_NAME + "'s (id: {}) password has been confirmed", LogEnum.SERVICE, user.getId());
+        UserEntity savedUser = userRepository.save(user);
+        return userMapper.toResponse(savedUser);
     }
 }

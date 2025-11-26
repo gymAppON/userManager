@@ -2,6 +2,7 @@ package com.example.userManager.domain.user;
 
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -37,6 +38,14 @@ public class UserEntity {
     @Type(JsonType.class)
     @Column(name = "metadata", columnDefinition = "jsonb")
     private UserMetadata metadata;
+
+    @Column(nullable = false)
+    private boolean isEmailVerified;
+
+    @Column(nullable = false)
+    private boolean isPasswordVerified;
+
+    private String emailVerificationCode, passwordVerificationCode;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

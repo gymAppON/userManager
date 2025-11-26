@@ -22,4 +22,8 @@ public interface UserService {
     UserEntity findByEmail(String email);
 
     UserEntity findByContactInfo(String contact);
+
+    UserEntity findByEmailVerificationCode(String verificationCode);
+
+    UserEntity findByPasswordVerificationCode(String verificationCode);
 }
