@@ -40,7 +40,7 @@ public class AuthController {
             @ApiResponse(responseCode = "4XX", description = "Login failed",
                     content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = RuntimeException.class))})
     })
-    public JwtResponseDto authenticateUser(@Valid @RequestBody LoginRequestDto loginRequestDto) throws Exception {
+    public JwtResponseDto loginUser(@Valid @RequestBody LoginRequestDto loginRequestDto) throws Exception {
         String jwtToken = authService.login(loginRequestDto);
         //String email = SecurityContextHolder.getContext().getAuthentication().getName();
         log.info("{}: User (email: {}) has accomplished authentication process", LogEnum.CONTROLLER, loginRequestDto.email());

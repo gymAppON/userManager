@@ -3,7 +3,9 @@ package com.example.userManager.domain.auth;
 import com.example.userManager.domain.auth.dto.LoginRequestDto;
 import com.example.userManager.domain.auth.dto.SignupRequestDto;
 import com.example.userManager.domain.user.*;
+import com.example.userManager.domain.user.dto.UserRequestDto;
 import com.example.userManager.domain.user.dto.UserResponseDto;
+import com.example.userManager.infrastructure.security.jwt.JwtService;
 import com.example.userManager.shared.enums.LanguageEnum;
 import com.example.userManager.shared.enums.WeightUnitEnum;
 import com.example.userManager.shared.exception.LogEnum;
@@ -23,7 +25,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AuthServiceIml implements AuthService{
     private final UserService userService;
-    private final UserMapper userMapper;
+    private final JwtService jwtService;
     private PasswordEncoder passwordEncoder;
 
     private static final String OBJECT_NAME = "Authentication";
@@ -52,32 +54,20 @@ public class AuthServiceIml implements AuthService{
             throw new UnconfirmedPasswordChangeException(email);
         }
 
-//        Authentication authentication;
-//        try {
-//            authentication = authenticationManager.authenticate(
-//                    new UsernamePasswordAuthenticationToken(loginRequestDto.email(), loginRequestDto.password())
-//            );
-//        } catch (AuthenticationException e) {
-//            throw new Exception("Authentication Exception", e);
-//        }
-//
-//        SecurityContextHolder.getContext().setAuthentication(authentication);
-        //return jwtService.generateToken(user.getId(), user.getEmail(), user.getFirstName()+" "+user.getLastName());
-
         log.info("{}: {} (Username: {}) was logged in manually", LogEnum.SERVICE, OBJECT_NAME, user.getUsername());
-        return "JWT Token in Future";
+        return jwtService.generateToken(user.getId(), user.getEmail(), user.getUsername());
     }
 
     @Override
-    public UserResponseDto loginViaGoogle(String name, LoginRequestDto requestDto){
+    public String loginViaGoogle(String name, LoginRequestDto requestDto){
         String googleAuthId = requestDto.googleAuthId();
         String email = requestDto.email();
-        UserEntity userOptional = null;
+        UserEntity userOptional;
 
         try {
             userOptional = userService.findByContactInfo(googleAuthId);
         }catch (CustomNotFoundException _){
-
+            userOptional = userService.findByEmail(email);
         }
 
         if (userOptional == null) {
@@ -85,11 +75,11 @@ public class AuthServiceIml implements AuthService{
                     googleAuthId, new UserMetadata(WeightUnitEnum.KG, LanguageEnum.EN, "+2"));
             // newUser.setRole(Role.USER);
             log.info("{}: {} (Email: {}) was created via Google", LogEnum.SERVICE, OBJECT_NAME, email);
-            return userService.create(newUser);
+            UserResponseDto savedUser = userService.create(newUser);
+            return jwtService.generateToken(savedUser.id(), savedUser.email(), savedUser.username());
         } else {
-            //Can be added some logic
             log.info("{}: {} (Email: {}) was logged in via Google", LogEnum.SERVICE, OBJECT_NAME, email);
-            return userMapper.toResponse(userOptional);
+            return jwtService.generateToken(userOptional.getId(), email, userOptional.getUsername());
         }
     }
 
