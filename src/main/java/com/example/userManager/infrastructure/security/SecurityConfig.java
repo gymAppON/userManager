@@ -16,6 +16,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @RequiredArgsConstructor
@@ -24,39 +25,28 @@ public class SecurityConfig {
 
     private final UserService userService;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
-//    private final AuthEntryPointJwt unauthorizedHandler;
-//    private final JwtAuthenticationFilter jwtAuthenticationFilter;
-//
+
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http,
+                                           //HeaderAuthenticationFilter headerAuthFilter, // for X-User-Id
+                                           InternalApiAuthFilter apiAuthFilter
+    ) throws Exception {
         http
-                .cors(AbstractHttpConfigurer::disable)
                 .csrf(AbstractHttpConfigurer::disable)
-                //.exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
-                .sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth ->
-                        auth
-                                .requestMatchers(
-                                        "/login/**", "/oauth2/**",
-                                        "/*",
-                                        "/auth/**",
-                                        "/swagger-ui/**",
-                                        "/swagger-ui.html",
-                                        "/v3/api-docs/**",
-                                        "/api-docs/**")
-                                .permitAll()
-                                //.requestMatchers("/api/users/**").authenticated()
-                                //.requestMatchers("/api/images/**").authenticated()
-//                                .anyRequest()
-//                                .permitAll()
-                                //.anyRequest().authenticated()
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // Gateway author check
+                .addFilterBefore(apiAuthFilter, UsernamePasswordAuthenticationFilter.class)
+
+                // Can be added user filtration
+                //  .addFilterAfter(headerAuthFilter, InternalApiAuthFilter.class)
+
+                .authorizeHttpRequests(auth -> auth
+                        .anyRequest().permitAll()
                 )
                 .oauth2Login(oauth2 -> oauth2
                                 .successHandler(oAuth2LoginSuccessHandler)
-                        // (Опционально) Настройка ендпоинта логина
-                        // .loginPage("/login")
-                );;
-        //http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                );
+
         return http.build();
     }
 
