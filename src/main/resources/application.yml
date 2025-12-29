@@ -7,6 +7,12 @@ internal:
 jwt:
   secret: ${JWT_SECRET}
 
+rabbitmq:
+  queue:
+    name: message_queue
+  queue_with_delay:
+    name: delay_queue
+
 spring:
   application:
     name: userManager
