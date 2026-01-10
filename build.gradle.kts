@@ -37,10 +37,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
 
 // https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-starter-webmvc-ui
+    //Pick better version
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13")
     // https://mvnrepository.com/artifact/io.hypersistence/hypersistence-utils-hibernate-63
     implementation("io.hypersistence:hypersistence-utils-hibernate-63:3.11.0")
-
 
     implementation ("io.jsonwebtoken:jjwt-api:0.13.0")
     implementation ("io.jsonwebtoken:jjwt-impl:0.13.0")

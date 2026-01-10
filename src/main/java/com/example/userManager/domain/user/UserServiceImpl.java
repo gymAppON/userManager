@@ -132,9 +132,8 @@ public class UserServiceImpl implements UserDetailsService, UserService {
         return null;
     }
 
-
     //FIND BY
-    public UserEntity findById(UUID id) {
+    private UserEntity findById(UUID id) {
         return userRepository.findById(id).orElseThrow(() -> new CustomNotFoundException(OBJECT_NAME, id));
     }
 

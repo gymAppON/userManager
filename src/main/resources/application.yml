@@ -12,6 +12,8 @@ rabbitmq:
     name: message_queue
   queue_with_delay:
     name: delay_queue
+  user_check_queue:
+    name: user_check_queue
 
 spring:
   application:
