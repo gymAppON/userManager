@@ -4,6 +4,7 @@ import com.example.userManager.domain.user.dto.UserRequestDto;
 import com.example.userManager.domain.auth.dto.SignupRequestDto;
 import com.example.userManager.domain.user.dto.UserResponseDto;
 import com.example.userManager.infrastructure.config.mail.notifications.UserSecurityCodeUpdatedEvent;
+import com.example.userManager.shared.enums.EntityStatus;
 import com.example.userManager.shared.enums.VerificationType;
 import com.example.userManager.shared.exception.LogEnum;
 import com.example.userManager.shared.exception.exceptions.general.CustomAlreadyExistException;
@@ -20,6 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -53,6 +55,7 @@ public class UserServiceImpl implements UserDetailsService, UserService {
 
         user.setEmailVerified(false);
         user.setEmailVerificationCode(UUID.randomUUID().toString().substring(0, 6));
+        user.setStatus(EntityStatus.ACTIVE);
         eventPublisher.publishEvent(new UserSecurityCodeUpdatedEvent(email, user.getEmailVerificationCode(), VerificationType.EMAIL_UPDATE));
 
         UserEntity savedUserEntity = userRepository.save(user);
@@ -118,7 +121,8 @@ public class UserServiceImpl implements UserDetailsService, UserService {
 
     @Override
     public void delete(UUID id) {
-        userRepository.deleteById(id);
+        //userRepository.deleteById(id);
+        userRepository.setStatusNON_ACTIVE(id);
 
         log.info("{}: {} (Id: {}) was deleted", LogEnum.SERVICE, OBJECT_NAME, id);
     }
@@ -134,23 +138,32 @@ public class UserServiceImpl implements UserDetailsService, UserService {
 
     //FIND BY
     private UserEntity findById(UUID id) {
-        return userRepository.findById(id).orElseThrow(() -> new CustomNotFoundException(OBJECT_NAME, id));
+        log.info("{}: request on retrieving " + OBJECT_NAME + " by id {} was sent", LogEnum.SERVICE, id);
+        return userExist(userRepository.findById(id), id);
     }
 
     @Override
     public UserEntity findByEmail (String email) {
         log.info("{}: request on retrieving " + OBJECT_NAME + " by email {} was sent", LogEnum.SERVICE, email);
-        return userRepository.findByEmail(email).orElseThrow(() -> new CustomNotFoundException(OBJECT_NAME, email));
+        return userExist(userRepository.findByEmail(email), email);
     }
 
     public UserEntity findByGoogleAuthId (String googleId) {
         log.info("{}: request on retrieving " + OBJECT_NAME + " by googleId {} was sent", LogEnum.SERVICE, googleId);
-        return userRepository.findByGoogleAuthId(googleId).orElseThrow(() -> new CustomNotFoundException(OBJECT_NAME, googleId));
+        return userExist(userRepository.findByGoogleAuthId(googleId), googleId);
     }
 
     public UserEntity findByTelegramId (String telegramId) {
         log.info("{}: request on retrieving " + OBJECT_NAME + " by telegramId {} was sent", LogEnum.SERVICE, telegramId);
-        return userRepository.findByTelegramId(telegramId).orElseThrow(() -> new CustomNotFoundException(OBJECT_NAME, telegramId));
+        return userExist(userRepository.findByTelegramId(telegramId), telegramId);
+    }
+
+    private <T> UserEntity userExist(Optional<UserEntity> user, T param) {
+        if (user.isPresent() && user.get().getStatus() == EntityStatus.ACTIVE) {
+            return user.get();
+        } else{
+            throw new CustomNotFoundException(OBJECT_NAME, param);
+        }
     }
 
     @Override

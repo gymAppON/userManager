@@ -15,6 +15,9 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
     Optional<UserEntity> findByEmailVerificationCode(String emailVerificationCode);
     Optional<UserEntity> findByPasswordVerificationCode(String passwordVerificationCode);
 
+    void setStatusNON_ACTIVE(UUID id);
+    void setStatusACTIVE(UUID id);
+
     boolean existsByEmail(String email);
     boolean existsByGoogleAuthId(String googleAuthId);
     boolean existsByTelegramId(String telegramId);

@@ -1,5 +1,6 @@
 package com.example.userManager.domain.user;
 
+import com.example.userManager.shared.enums.EntityStatus;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -46,6 +47,10 @@ public class UserEntity {
     private boolean isPasswordVerified;
 
     private String emailVerificationCode, passwordVerificationCode;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EntityStatus status;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
