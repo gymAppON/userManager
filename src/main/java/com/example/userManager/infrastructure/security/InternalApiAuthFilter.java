@@ -7,10 +7,13 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
 @Slf4j
 @Component
@@ -26,20 +29,28 @@ public class InternalApiAuthFilter extends OncePerRequestFilter {
 
         String requestKey = request.getHeader("x-internal-api-key");
 
-        log.info("Income request URI: {}", request.getRequestURI());
-        log.info("Expected Key (Server): '{}'", internalApiKey);
-        log.info("Received Key (Header): '{}'", requestKey);
-        // Key check
+        // Checking GateWay key
         if (requestKey == null || !requestKey.equals(internalApiKey)) {
-            //False key
             log.warn("Unauthorized access attempt without valid API Key from IP: {}", request.getRemoteAddr());
-
             response.setStatus(HttpStatus.FORBIDDEN.value());
-            response.getWriter().write("Access Denied: Invalid Internal Key");
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\": \"Access Denied: Invalid Internal Key\"}");
             return;
         }
 
-        // True key
+        String userId = request.getHeader("X-User-Id");
+
+        if (userId != null && !userId.isBlank()) {
+            //Setting security context
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(userId, null, List.of());
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            log.debug("Authenticated user {} via Gateway headers", userId);
+        } else {
+            log.debug("Request from Gateway without user identity (anonymous/public request)");
+        }
+
         filterChain.doFilter(request, response);
     }
 

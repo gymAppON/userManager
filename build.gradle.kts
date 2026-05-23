@@ -61,8 +61,13 @@ dependencies {
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+    // Source: https://mvnrepository.com/artifact/org.mockito/mockito-core
+    testImplementation("org.mockito:mockito-core:5.23.0")
 }
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+
+    jvmArgs("-XX:+EnableDynamicAgentLoading")
 }

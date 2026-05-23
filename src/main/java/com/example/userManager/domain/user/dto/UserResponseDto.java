@@ -9,6 +9,6 @@ public record UserResponseDto(UUID id,
                               String email,
                               String telegramId,
                               String googleAuthId,
-                              String password,
+                              boolean isEmailVerified,
                               UserMetadata metadata) {
 }

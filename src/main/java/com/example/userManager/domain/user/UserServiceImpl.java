@@ -122,7 +122,7 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     @Override
     public void delete(UUID id) {
         //userRepository.deleteById(id);
-        userRepository.setStatusNON_ACTIVE(id);
+        updateStatus(id, EntityStatus.NON_ACTIVE);
 
         log.info("{}: {} (Id: {}) was deleted", LogEnum.SERVICE, OBJECT_NAME, id);
     }
@@ -203,5 +203,13 @@ public class UserServiceImpl implements UserDetailsService, UserService {
         log.info("{}: " + OBJECT_NAME + "'s (id: {}) password has been confirmed", LogEnum.SERVICE, user.getId());
         UserEntity savedUser = userRepository.save(user);
         return userMapper.toResponse(savedUser);
+    }
+
+    //
+    private void updateStatus(UUID id, EntityStatus status) {
+        UserEntity user = findById(id);
+        user.setStatus(status);
+
+        userRepository.save(user);
     }
 }

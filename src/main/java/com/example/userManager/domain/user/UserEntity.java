@@ -49,7 +49,7 @@ public class UserEntity {
     private String emailVerificationCode, passwordVerificationCode;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    //@Column(nullable = false)
     private EntityStatus status;
 
     @CreationTimestamp
