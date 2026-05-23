@@ -30,6 +30,9 @@ dependencies {
     implementation ("org.springframework.boot:spring-boot-starter-validation")
     implementation ("org.springframework.boot:spring-boot-starter-security")
 
+    // Source: https://mvnrepository.com/artifact/com.bucket4j/bucket4j_jdk17-core
+    implementation("com.bucket4j:bucket4j_jdk17-core:8.19.0")
+
     // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-mail
     implementation("org.springframework.boot:spring-boot-starter-mail")
 

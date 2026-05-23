@@ -2,10 +2,13 @@ package com.example.userManager.domain.auth;
 
 import com.example.userManager.domain.auth.dto.LoginRequestDto;
 import com.example.userManager.domain.auth.dto.SignupRequestDto;
+import com.example.userManager.domain.user.UserService;
 import com.example.userManager.domain.user.dto.UserResponseDto;
+import com.example.userManager.infrastructure.config.RateLimitingService;
 import com.example.userManager.shared.exception.LogEnum;
 import com.example.userManager.shared.exception.exceptions.general.CustomAlreadyExistException;
 import com.example.userManager.infrastructure.security.jwt.JwtResponseDto;
+import com.example.userManager.shared.exception.exceptions.general.CustomBadRequestException;
 import com.example.userManager.shared.exception.exceptions.general.CustomErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -31,6 +34,7 @@ public class AuthController {
     private static final String VERIF_URI_CODE = "/{verifCode}";
 
     private final AuthService authService;
+    private final RateLimitingService rateLimitingService;;
 
     @PostMapping("/login")
     @Operation(summary = "Login user")
@@ -41,6 +45,10 @@ public class AuthController {
                     content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = RuntimeException.class))})
     })
     public JwtResponseDto loginUser(@Valid @RequestBody LoginRequestDto loginRequestDto) throws Exception {
+        if (!rateLimitingService.allowRequest(loginRequestDto.email())) {
+            throw new CustomBadRequestException("Too many login attempts. Try again later.");
+        }
+
         String jwtToken = authService.login(loginRequestDto);
         //String email = SecurityContextHolder.getContext().getAuthentication().getName();
         log.info("{}: User (email: {}) has accomplished authentication process", LogEnum.CONTROLLER, loginRequestDto.email());
